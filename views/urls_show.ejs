@@ -9,21 +9,22 @@
 
 <body>
   <%- include('partials/_header') %>
-  <form class="form-inline" action="/urls/:id" method="POST">
-  
+  <form action="/urls/:id" method="POST">
   <div class="card text-center">
       <div class="card-header"></div>
-      <div class="card-body">
-        <h5 class="card-title">TinyURL for: <%= longURL %></h5>
-        <p class="card-text">Short URL: <a href="/u/<%= shortURL %>"><%= shortURL %></a></p>
-        <tr><h2>Edit</h2></tr>
+      <div class="card-body" style="margin:1em">
+        <h3> <class="card-title">TinyURL for: <%= longURL %></h3>
+        <h5><p class="card-text">Short URL: <a href="/u/<%= shortURL %>"><%= shortURL %></a></p></h5>
+      </div>
+      <div class="card-header">
+        <tr><h1 style="color:rgb(122, 121, 121)">Edit</h1></tr>
         <tr>
-          <td><Label>Enter URL</Label></td>
-          <td><input type="text" name = "longURL"></td>
-          <td><button name = 'shortURL' value = <%= shortURL %> >Submit</button></td>
+          <td><Label style="margin: 1em;"><h5 style="color:rgb(122, 121, 121)">New URL:</h5></Label></td>
+          <td><input type="text" name = "longURL" placeholder="<%= longURL %>" style="width: 300px"></td>
+          <td><button class="btn btn-primary" style="height:2.5em; width: 6em; font-size: larger;" name = 'shortURL'>Submit</button></td>
         </tr>
       </div>
-    <div class="card-footer text-muted"></div>
+  
   </div>
   <!-- Bootstrap JS -->
   <script src="https://code.jquery.com/jquery-3.3.1.slim.min.js" integrity="sha384-q8i/X+965DzO0rT7abK41JStQIAqVgRVzpbzo5smXKp4YfRvH+8abtTE1Pi6jizo" crossorigin="anonymous"></script>
