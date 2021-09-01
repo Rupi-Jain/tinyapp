@@ -1,14 +1,88 @@
 <header>
   <nav class="navbar navbar-expand-md navbar-dark bg-success">
+    <table>
+      <tr>
     <a class="navbar-brand" href="/urls">TinyApp</a>
     <button class="navbar-toggler" type="button" data-toggle="collapse" data-target="#navbarNavAltMarkup" aria-controls="navbarNavAltMarkup" aria-expanded="false" aria-label="Toggle navigation">
       <span class="navbar-toggler-icon"></span>
     </button>
     <div class="collapse navbar-collapse" id="navbarNavAltMarkup">
-      <div class="navbar-nav">
+      <div class="navbar-nav mr-auto">
         <a class="nav-item nav-link" href="/urls">My URLs</a>
         <a class="nav-item nav-link" href="/urls/new">Create New URL</a>
       </div>
+      <div class="navbar-nav">
+        <% if (user) { %>
+          <span class="nav-item nav-link">Logged in As: <%= user.email %></span> 
+          <a class="nav-item nav-link"href = '/logout'>Logout</a>         
+        <% } else {%>
+          <a class="nav-item nav-link" href = '/register'>Register</a>
+          <span class="nav-item nav-link">|</span>
+          <a  class="nav-item nav-link"href = '/login'>Login</a>
+        <% } %>
+      </div>    
     </div>
+  </tr>
+  </table>
   </nav>
 </header>
+
+
+<!-- Place me under </button> in _header -->
+
+<!-- <div class="collapse navbar-collapse" id="navbarNavAltMarkup">
+  <div class="navbar-nav mr-auto">
+    <a class="nav-item nav-link" href="/urls">My URLs</a>
+    <a class="nav-item nav-link" href="/urls/new">Create New URL</a>
+  </div>
+  <div class="navbar-nav">
+    <a class="nav-item nav-link" href="">Logan</a>
+    <a class="nav-item nav-link" href="">Regan</a>
+  </div>
+  <form class="form-inline mx-3">
+    <span class="navbar-text text-dark text-inline mx-3">You fill me up!</span>
+    <button class="btn btn-outline-dark my-2 my-sm-0">You fill me bro?</button>
+  </form>
+</div> -->
+
+<!-- Place me inside the <body> element in BOTH login AND register
+
+<main style="margin: 1em;">
+  <h3>Logan</h3>
+  <form>
+    <div class="form-group">
+      <label>@</label>
+      <br>
+      <input class="col-sm-3 my-1" class="form-control" placeholder='x-men.ca'>
+    </div>
+    <div class="form-group">
+      <label>There is no spoon</label>
+      <br>
+      <input class="col-sm-3 my-1" class="form-control" placeholder='...just use a straw'>
+    </div>
+    <button class="btn btn-primary">Logan</button>
+  </form>
+</main>
+
+<!-- Place me inside the <body> element in new -->
+
+<!-- <main style="margin: 1em;">
+  <h3>Totally Legit PayPal Login</h3>
+  <form class="form-inline">
+    <div class="form-group mb-2">
+      <label>Enter your PayPal password: </label>
+      <input class="form-control" placeholder="http://" style="width: 300px; margin: 1em">
+      <button type="submit" class="btn btn-primary">$</button>
+    </div>
+  </form>
+</main> -->
+
+<!-- Place me under the TinyURL for/ShortURL <div> in show-->
+  
+<!-- <div class="card-footer text-muted">
+  <h3>I Dare you to delete me</h3>
+  <form>
+    <label>"Challenge Accepted":</label>
+    <input>
+    <button class="btn btn-primary">ERASE</button>
+  </form> --> 
