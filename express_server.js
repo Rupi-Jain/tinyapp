@@ -2,6 +2,7 @@
 const express = require("express");
 const app = express();
 const PORT = 8080; // default port 8080
+const bcrypt = require('bcrypt');
 
 app.set("view engine", 'ejs');
 const bodyParser = require("body-parser");
@@ -13,16 +14,19 @@ function generateRandomString() {
   return Math.random().toString(36).substr(2, 6);
 }
 
+const password1 = bcrypt.hashSync("test", 10);
+const password2 = bcrypt.hashSync("1234", 10);
+
 const usersDb = { 
   "b12b34": {
     id: "b12b34", 
     email: "rupi.jain@gmail.com", 
-    password: "test"
+    password: password1 
   },
  "a123D4": {
     id: "a123D4", 
     email: "sheenu@example.com", 
-    password: "1234"
+    password: password2
   }
 }
 
@@ -51,7 +55,7 @@ const findUserByEmail = (email, usersDb) => {
 
 const authenticateUser = (email, password, usersDb) => {
   const userFound = findUserByEmail(email, usersDb);
-  if (userFound && userFound.password === password) {
+  if (userFound && bcrypt.compareSync(password, userFound.password)) {
     return userFound; 
   }
   return false;
@@ -176,7 +180,7 @@ app.post("/login", (req, res) => {
     res.cookie("user_id", user.id);
     res.redirect("/urls/");
   } else {
-    res.send(res.statusCode = 400);
+    res.send(res.status(400).send("Password doesn't match"));
   }
   
 });
