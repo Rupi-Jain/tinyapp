@@ -3,20 +3,28 @@ const express = require("express");
 const app = express();
 const PORT = 8080; // default port 8080
 const bcrypt = require('bcrypt');
+const bodyParser = require("body-parser");
+const {findUserByEmail} = require("./helpers.js");
+const cookieSession = require('cookie-session')
+
 
 app.set("view engine", 'ejs');
-const bodyParser = require("body-parser");
 app.use(bodyParser.urlencoded({extended: true}));
-const cookieParser = require('cookie-parser');
-app.use(cookieParser());
+app.use(cookieSession({
+  name: 'session',
+  keys: ['key1','key2']
+}))
 
+//generates a random string
 function generateRandomString() {
   return Math.random().toString(36).substr(2, 6);
 }
 
+
 const password1 = bcrypt.hashSync("test", 10);
 const password2 = bcrypt.hashSync("1234", 10);
 
+// Defining Database of Users
 const usersDb = { 
   "b12b34": {
     id: "b12b34", 
@@ -30,6 +38,7 @@ const usersDb = {
   }
 }
 
+// Defining Database of URL's
 const urlDatabase = {
   b6UTxQ: {
       longURL: "https://www.tsn.ca",
@@ -44,24 +53,18 @@ const urlDatabase = {
     userID: "b12b34"
 },
 };
-const findUserByEmail = (email, usersDb) => {
-  for (let userId in usersDb) {
-    if (usersDb[userId].email === email) {
-      return usersDb[userId]; // return the user object
-    }
-  }
-  return false;
-};
 
+// Defining User-authentication function
 const authenticateUser = (email, password, usersDb) => {
-  const userFound = findUserByEmail(email, usersDb);
+  const userFound = findUserByEmail(email, usersDb); // findUserByEmail function returns an user object
   if (userFound && bcrypt.compareSync(password, userFound.password)) {
     return userFound; 
   }
   return false;
 };
 
-const urlsForUser = (id) => {
+//returns the object og url's for a logged in user 
+const urlsForUser = (id, urlDatabase) => {
   const tempUrlDb = {};
   for (let url in urlDatabase) {
     if (urlDatabase[url].userID === id) {
@@ -71,142 +74,179 @@ const urlsForUser = (id) => {
   return tempUrlDb;
 }
 
+app.get("/", (req, res) => {
+  const userId = req.session.user_id;
+  if (userId === undefined) {    //checks if user is logged in
+    const templateVars = {user: ""};
+    return res.render("login", templateVars);
+  } 
+  const userURLs = urlsForUser(userId, urlDatabase);  //returning an object of url's for logged in user
+  templateVars = {urls: userURLs, user: usersDb[userId]};
+  res.render("urls_index", templateVars)
+});
+
 app.get("/login", (req, res) => {
   const templateVars = {user: ""};
   res.render("login", templateVars);
 });
 
 app.get("/register", (req, res) => {
+  const userId = req.session.user_id;
   const templateVars = {user: ""};
-  res.render("register", templateVars);
+  if (userId === undefined) {     //checks if user is logged in
+    return res.render("register", templateVars);
+  }
+  res.redirect("/urls");
 });
 
 app.get("/logout", (req, res) => {
-  res.clearCookie("user_id");
+  req.session = null;
   res.redirect("/urls/");
 });
 
+app.get("/errors", (req, res) => {
+  res.render("/errors");
+});
+
+
 app.get("/urls", (req, res) => {
-  const userId = req.cookies['user_id'];
-  let templateVars = {}; 
-  if (userId === undefined) {
-    templateVars = {urls: {}, user: usersDb[userId]};    
-  } else {
-    const userURLs = urlsForUser(userId); 
-    templateVars = {urls: userURLs, user: usersDb[userId]};
-  }
+  const userId = req.session.user_id;
+  if (userId === undefined) {     //checks if user is logged in
+    const templateVars = {urls: {}, user: usersDb[userId]};  
+    return res.render("urls_index", templateVars);
+  };  
+  const userURLs = urlsForUser(userId, urlDatabase); //returning an object of url's for logged in user
+  const templateVars = {urls: userURLs, user: usersDb[userId]};
   res.render("urls_index", templateVars);
 });
 
 app.get("/urls/new", (req, res) => {
-  const userId = req.cookies['user_id'];
-  console.log(userId);
-  if (userId === undefined) {
-    res.redirect("/login");
-  } else {
-    const templateVars = {urls: urlDatabase, user: usersDb[userId]};
-    res.render("urls_new", templateVars);
-  }
+  const userId = req.session.user_id;
+  if (userId === undefined) {     //checks if user is logged in
+    return res.redirect("/login");
+  } 
+  const templateVars = {urls: urlDatabase, user: usersDb[userId]};
+  res.render("urls_new", templateVars);
 });
 
 app.get("/u/:shortURL", (req, res) => {
-  const urldbId = req.params.shortURL
-  if (urlDatabase.hasOwnProperty(urldbId)) {
-    const longURL = urlDatabase[urldbId].longURL;
+  const shortURL = req.params.shortURL
+  if (urlDatabase.hasOwnProperty(shortURL)) { //checks if the provided shortUrl exists in urlDatabase
+    const longURL = urlDatabase[shortURL].longURL;
     return res.redirect(longURL);
   } 
-  res.send("Invalid Short URL");
+  res.status(400);
+  const templateVars = {user: "", message: "URL dosn't exists!! Please try again.."};
+  return res.render("errors", templateVars);    
 });
 
 app.get("/urls/:shortURL", (req, res) => {  
-  const userId = req.cookies['user_id'];
+  const userId = req.session.user_id;
   const shortURL = req.params.shortURL;
-  const longURL = urlDatabase[urldbId].longURL;
-  let templateVars = {user: {}};
-  if (userId !== undefined) {
-    const urldbId = req.params.shortURL;
-    if (urlDatabase[urldbId].userID === userId) {
-      templateVars = { shortURL, longURL, user: usersDb[userId]}   
-    } else {
-      return res.send("You are not authorized to access this Page.")
-    }
+ 
+  if (userId === undefined) {     //checks if user is logged in
+    const templateVars = {user: "", message: "Please login before proceed..."};
+    return res.render("errors", templateVars);
   } 
+  if (! urlDatabase.hasOwnProperty(shortURL)) {   //checks if the provided shortUrl exists in urlDatabase
+    const templateVars = {user: "", message: "URL dosn't exists!! Please try again.."};
+    return res.render("errors", templateVars);    
+  }
+  if (urlDatabase[shortURL].userID !== userId) {  //checks if logged in user and url's user is same
+    const templateVars = {user: "", message: "Access Denied!!! You are not authorized"};
+    return res.render("errors", templateVars);    
+  }
+  const  longURL = urlDatabase[shortURL].longURL;
+  templateVars = { shortURL, longURL, user: usersDb[userId]}   
   res.render('urls_show', templateVars);
 });
 
 app.post("/urls", (req, res) => {
-  const userId = req.cookies['user_id'];
-  if (userId === undefined) {
-    return res.send(res.status(400).send("Access Denied"));
-  }
-  const shortURL = generateRandomString()
+  const userID = req.session.user_id;   //getting userId from seesion variable
+  if (userID === undefined) {     //checks if the user is logged in
+    const templateVars = {user: "", message: "Please login before proceed..."};
+    return res.render("errors", templateVars);
+  }  
+  const shortURL = generateRandomString()  // returning random string for url
   const longURL = req.body.longURL;
-  urlDatabase[shortURL] = {longURL, userId};
-  return res.redirect("/urls/" );         
+  urlDatabase[shortURL] = {longURL, userID}; //adding new url to urlDatabase
+  res.redirect("/urls/" );      
 });
 
+
 app.post("/urls/:shortURL/delete", (req, res) => {
-  const userId = req.cookies['user_id'];
-  console.log(userId);
-  if (userId === undefined) {
-    return res.send(res.status(400).send("Access Denied"));
-  } 
+  const userId = req.session.user_id;
   const shortURL = req.body.shortURL;
-  delete urlDatabase[shortURL];
+ 
+  if (userId === undefined) {      //checks if user is logged in
+    const templateVars = {user: "", message: "Please login before proceed..."};
+    return res.render("errors", templateVars);
+  } 
+  if (urlDatabase[shortURL].userID !== userId) { //checks if logged in user and url's user is same
+    const templateVars = {user: "", message: "Access Denied!!! You are not authorized"};
+    return res.render("errors", templateVars);    
+  }
+  delete urlDatabase[shortURL];  //deleting url from urlDatabase
   return res.redirect("/urls");
 });
 
 app.post("/urls/:shortURL", (req, res) => {
-  const userId = req.cookies['user_id'];
-  console.log(userId);
-  if (userId === undefined) {
-    return res.send(res.status(400).send("Access Denied!!! YOU are not authorized to access this page"));
-  } 
+  const userId = req.session.user_id;
   const shortURL = req.params.shortURL;
-  console.log(req.params, req.body.shortURL)
-  urlDatabase[shortURL].longURL = req.body.longURL;
+
+  if (userId === undefined) {   //checks if user is logged in
+    const templateVars = {user: "", message: "Please login before proceed..."};
+    return res.render("errors", templateVars);
+  } 
+  if (urlDatabase[shortURL].userID !== userId) {  //checks if logged in user and url's user is same
+    const templateVars = {user: "", message: "Access Denied!!! You are not authorized to access this url"};
+    return res.render("errors", templateVars);    
+  }
+  urlDatabase[shortURL].longURL = req.body.longURL; //updating the long url in the urlDatabse
   return res.redirect("/urls");
 });
 
 app.post("/login", (req, res) => {
   const {email, password} = req.body;
-  const emailFound = findUserByEmail(email, usersDb)
-  if(!emailFound) {
-    return res.send(res.status(403).send("Email doesn't exists!!!"))
+  if (email === "" || password === "") { //checking both user name and password 
+    const templateVars = {user: "", message: "You can't leave Email or password blank."};
+    return res.render("errors", templateVars);
   }
-  const user = authenticateUser(email, password, usersDb);
-  console.log("user:", user.id)
+  const user = authenticateUser(email, password, usersDb); //returns the user object if finds a match
   if (user) {
-    res.cookie("user_id", user.id);
-    res.redirect("/urls/");
-  } else {
-    res.send(res.status(400).send("Password doesn't match"));
-  }
-  
+    req.session.user_id = user.id;
+    return res.redirect("/urls/");
+  } 
+  const templateVars = {user: "", message: "Email or password doesn't match. Try again!"};
+  res.render("errors", templateVars);
 });
 
 
 app.post("/register", (req, res) => {
   const userID = generateRandomString();
   const {email, password} = req.body;
-  //check if email is not empty
-  if (email === "") {
-    return res.send(res.status(400).send("You can't leave eamil blank!!"));
+  //check if email and password are not empty
+  if (email === "" || password === "") {
+    const templateVars = {user: "", message: "You can't leave eamil or password blank!!"};
+    return res.render("errors", templateVars);
   }
-  //Verifying if user's email already exists
+  //verifying if user's email already exists
   const userFound = findUserByEmail(email, usersDb);
-  console.log(userFound);
   if (userFound) {
-    return res.send(res.statusCode = 400);
+    const templateVars = {user: "", message: "Email already exists!!"};
+    return res.render("errors", templateVars);
   }
+  //setting values to user object
   const user = {
     id: userID,
     email,
     password 
   }
-  usersDb[userID] = user;
-  res.cookie("user_id", userID)
-  return res.redirect("/urls/");
+  usersDb[userID] = user; // adding a new user to usersDb
+  req.session.user_id = userID; 
+  const userURLs = urlsForUser(userID, urlDatabase); 
+  templateVars = {urls: userURLs, user};
+  return res.render("urls_index", templateVars);
 });
 
 app.listen(PORT, () => {
