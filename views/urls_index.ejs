@@ -16,18 +16,17 @@
     <h3>My URLs</h3>
     <form class="form-inline" action="/urls/:shortURL/delete" method="POST">
     <table class="table">
+      <thead>
+        <tr>
+          <th scope="col">Short URL</th>
+          <th scope="col">Long URL</th>
+          <th scope="col">Edit</th>
+          <th scope="col">Delete</th>
 
+        </tr>
+      </thead>
+      <tbody>
         <% if (Object.keys(urls).length !== 0) { %>
-          <thead>
-            <tr>
-              <th scope="col">Short URL</th>
-              <th scope="col">Long URL</th>
-              <th scope="col">Edit</th>
-              <th scope="col">Delete</th>
-    
-            </tr>
-          </thead>
-          <tbody>
           <% for(let url in urls) { %>
             <tr>
              <td><%= url %></td>
@@ -37,14 +36,8 @@
           </tr>
         </tbody>
           <% } %>
-        <% } else { %>
-          <tbody>
-          <tr>
-            <td> <h4>Please <a href = "/login">Login </a>to access the URLs</h4></td>
-          </tr>
-        </tbody>
         <% } %>
-      
+      <tbody><tr></tr></tbody>
     </table>
   </form>
   </main>
