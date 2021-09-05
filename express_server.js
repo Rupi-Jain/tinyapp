@@ -99,9 +99,23 @@ app.get("/register", (req, res) => {
   res.redirect("/urls");
 });
 
-app.get("/logout", (req, res) => {
+// app.get("/logout", (req, res) => {
+//   req.session = null;
+//   //const templateVars = {urls: {}, user: {}};
+//   //res.render("urls_index", templateVars);
+//   res.redirect("/urls");
+// });
+// app.get("/logout", (req, res) => {
+//   req.session = null;
+//   //const templateVars = {urls: {}, user: {}};
+//   //res.render("urls_index", templateVars);
+//   res.redirect("/urls");
+// });
+app.post("/logout", (req, res) => {
   req.session = null;
-  res.redirect("/urls/");
+  //const templateVars = {urls: {}, user: {}};
+  //res.render("urls_index", templateVars);
+  res.redirect("/urls");
 });
 
 app.get("/errors", (req, res) => {
@@ -112,7 +126,7 @@ app.get("/errors", (req, res) => {
 app.get("/urls", (req, res) => {
   const userId = req.session.user_id;
   if (userId === undefined) {     //checks if user is logged in
-    const templateVars = {urls: {}, user: usersDb[userId]};  
+    const templateVars = {urls: {}, user: {}};
     return res.render("urls_index", templateVars);
   };  
   const userURLs = urlsForUser(userId, urlDatabase); //returning an object of url's for logged in user
@@ -172,7 +186,6 @@ app.post("/urls", (req, res) => {
   urlDatabase[shortURL] = {longURL, userID}; //adding new url to urlDatabase
   res.redirect("/urls/" );      
 });
-
 
 app.post("/urls/:shortURL/delete", (req, res) => {
   const userId = req.session.user_id;
@@ -240,8 +253,9 @@ app.post("/register", (req, res) => {
   const user = {
     id: userID,
     email,
-    password 
+    password: bcrypt.hashSync(password, 10)
   }
+
   usersDb[userID] = user; // adding a new user to usersDb
   req.session.user_id = userID; 
   const userURLs = urlsForUser(userID, urlDatabase); 
