@@ -12,9 +12,9 @@
         <a class="nav-item nav-link" href="/urls/new">Create New URL</a>
       </div>
       <div class="navbar-nav">
-        <% if (user) { %>
-          <span class="nav-item nav-link">Logged in As: <%= user.email %></span> 
-          <a class="nav-item nav-link"href = '/logout'>Logout</a>         
+        <% if (Object.keys(user).length)  { %>
+          <span class="nav-item nav-link text-dark">Logged in As: <%= user.email %>! </span> 
+          <form method = "POST" action = '/logout'><button class = 'btn btn-outline-dark bg-success text-dark' type = 'submit' >Logout</button></form> 
         <% } else {%>
           <a class="nav-item nav-link" href = '/register'>Register</a>
           <span class="nav-item nav-link">|</span>
